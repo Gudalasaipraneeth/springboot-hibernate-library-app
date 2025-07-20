@@ -5,34 +5,37 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.springproject.SpringProject.dao.bookDao;
+import com.springproject.SpringProject.repository.BookRepository;
 import com.springproject.SpringProject.models.Book;
 import com.springproject.SpringProject.models.Genre;
 
 @Service
 public class bookService {
 	@Autowired
-	private bookDao bookDao;
-	
-	public List<Book> getBooks(){
-		return this.bookDao.getBooks();
+	private BookRepository bookRepository;
+
+	public List<Book> getBooks() {
+		return bookRepository.findAll();
 	}
-	
+
 	public Book addBook(Book book) {
-		return this.bookDao.addBook(book);
+		return bookRepository.save(book);
 	}
-	
+
 	public Book getBook(int id) {
-		return this.bookDao.getBook(id);
+		return bookRepository.findById(id).orElse(null);
 	}
 
-	public Book updateBook(int id,Book book){
+	public Book updateBook(int id, Book book) {
 		book.setId(id);
-		return this.bookDao.updateBook(book);
-	}
-	public boolean deleteBook(int id) {
-		return this.bookDao.deleteBook(id);
+		return bookRepository.save(book);
 	}
 
-	
+	public boolean deleteBook(int id) {
+		if (bookRepository.existsById(id)) {
+			bookRepository.deleteById(id);
+			return true;
+		}
+		return false;
+	}
 }

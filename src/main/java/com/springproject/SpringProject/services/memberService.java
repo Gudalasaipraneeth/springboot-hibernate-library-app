@@ -7,36 +7,47 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
-import com.springproject.SpringProject.dao.memberDao;
+import com.springproject.SpringProject.repository.MemberRepository;
 import com.springproject.SpringProject.models.Member;
 
 @Service
 public class memberService {
 	@Autowired
-	private memberDao memberDao;
-	
-	public List<Member> getMembers(){
-		return this.memberDao.getAllMembers();
+	private MemberRepository memberRepository;
+
+	public List<Member> getMembers() {
+		return memberRepository.findAll();
 	}
-	
+
 	public Member addMember(Member member) {
 		try {
-			return this.memberDao.saveMember(member);
+			return memberRepository.save(member);
 		} catch (DataIntegrityViolationException e) {
-			// handle unique constraint violation, e.g., by throwing a custom exception
 			throw new RuntimeException("Add member error");
 		}
 	}
-	
-	public Member checkLogin(String username,String password) {
-		return this.memberDao.getMember(username, password);
-	}
 
 	public boolean checkMemberExists(String username) {
-		return this.memberDao.memberExists(username);
+		return memberRepository.findAll().stream().anyMatch(m -> m.getUsername().equals(username));
 	}
 
 	public Member getMemberByUsername(String username) {
-			return memberDao.getMemberByUsername(username);
-		}
+		return memberRepository.findAll().stream().filter(m -> m.getUsername().equals(username)).findFirst().orElse(null);
+	}
+
+	// Implement checkLogin if needed, or use Spring Security
+
+	public Member updateMember(Member member) {
+		return memberRepository.save(member);
+	}
+
+	public Member updateMemberProfile(int id, String username, String email, String password, String address) {
+		return memberRepository.findById(id).map(m -> {
+			m.setUsername(username);
+			m.setEmail(email);
+			m.setPassword(password);
+			m.setAddress(address);
+			return memberRepository.save(m);
+		}).orElse(null);
+	}
 }

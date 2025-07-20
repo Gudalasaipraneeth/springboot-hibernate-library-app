@@ -1,9 +1,6 @@
 package com.springproject.SpringProject.controller;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+// ...existing code...
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -185,72 +182,33 @@ public class AdminController {
 	
 	@GetMapping("profileDisplay")
 	public String profileDisplay(Model model) {
-		String displayusername,displaypassword,displayemail,displayaddress;
-		try
-		{
-			Class.forName("com.mysql.cj.jdbc.Driver");
-			String dbUrl = System.getenv("DB_URL");
-			String dbUser = System.getenv("DB_USER");
-			String dbPassword = System.getenv("DB_PASSWORD");
-			Connection con = DriverManager.getConnection(dbUrl, dbUser, dbPassword);
-			PreparedStatement stmt = con.prepareStatement("select * from users where username = ?"+";");
-			
-			String username = SecurityContextHolder.getContext().getAuthentication().getName();
-			stmt.setString(1, username);
-			
-			ResultSet rst = stmt.executeQuery();
-			
-			if(rst.next())
-			{
-			int userid = rst.getInt(1);
-			displayusername = rst.getString(2);
-			displayemail = rst.getString(3);
-			displaypassword = rst.getString(4);
-			displayaddress = rst.getString(5);
-			model.addAttribute("userid",userid);
-			model.addAttribute("username",displayusername);
-			model.addAttribute("email",displayemail);
-			model.addAttribute("password",displaypassword);
-			model.addAttribute("address",displayaddress);
-			}
+		String username = SecurityContextHolder.getContext().getAuthentication().getName();
+		Member member = memberService.getMemberByUsername(username);
+		if (member != null) {
+			model.addAttribute("userid", member.getId());
+			model.addAttribute("username", member.getUsername());
+			model.addAttribute("email", member.getEmail());
+			model.addAttribute("password", member.getPassword());
+			model.addAttribute("address", member.getAddress());
 		}
-		catch(Exception e)
-		{
-			System.out.println("Exception:"+e);
-		}
-		System.out.println("Hello");
 		return "updateProfile";
 	}
 	
-	@RequestMapping(value = "updateuser",method=RequestMethod.POST)
-	public String updateUserProfile(@RequestParam("userid") int userid,@RequestParam("username") String username, @RequestParam("email") String email, @RequestParam("password") String password, @RequestParam("address") String address) 
-	
-	{
-		try
-		{
-			Class.forName("com.mysql.jdbc.Driver");
-			Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/ecommjava","root","");
-			
-			PreparedStatement pst = con.prepareStatement("update users set username= ?,email = ?,password= ?, address= ? where uid = ?;");
-			pst.setString(1, username);
-			pst.setString(2, email);
-			pst.setString(3, password);
-			pst.setString(4, address);
-			pst.setInt(5, userid);
-			int i = pst.executeUpdate();	
-			
-			Authentication newAuthentication = new UsernamePasswordAuthenticationToken(
-					username,
-					password,
-					SecurityContextHolder.getContext().getAuthentication().getAuthorities());
-
-			SecurityContextHolder.getContext().setAuthentication(newAuthentication);
+	@RequestMapping(value = "updateuser", method = RequestMethod.POST)
+	public String updateUserProfile(@RequestParam("userid") int userid, @RequestParam("username") String username, @RequestParam("email") String email, @RequestParam("password") String password, @RequestParam("address") String address) {
+		try {
+			Member updated = memberService.updateMemberProfile(userid, username, email, password, address);
+			if (updated != null) {
+				Authentication newAuthentication = new UsernamePasswordAuthenticationToken(
+						username,
+						password,
+						SecurityContextHolder.getContext().getAuthentication().getAuthorities());
+				SecurityContextHolder.getContext().setAuthentication(newAuthentication);
+			}
+		} catch (Exception e) {
+			System.out.println("Exception:" + e);
 		}
-		catch(Exception e)
-		{
-			System.out.println("Exception:"+e);
-		}
-		return "redirect:index";
+		return "redirect:/admin/profileDisplay";
 	}
 
 }
