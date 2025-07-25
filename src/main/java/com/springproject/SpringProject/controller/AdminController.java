@@ -1,8 +1,13 @@
 package com.springproject.SpringProject.controller;
 
-// ...existing code...
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -20,23 +25,32 @@ import org.springframework.web.servlet.ModelAndView;
 import com.springproject.SpringProject.models.Genre;
 import com.springproject.SpringProject.models.Book;
 import com.springproject.SpringProject.models.Member;
+import com.springproject.SpringProject.models.BorrowList;
+import com.springproject.SpringProject.dto.MemberDTO;
+import com.springproject.SpringProject.dto.BookDTO;
+import com.springproject.SpringProject.util.DTOConverter;
 import com.springproject.SpringProject.services.genreService;
 import com.springproject.SpringProject.services.bookService;
 import com.springproject.SpringProject.services.memberService;
+import com.springproject.SpringProject.services.borrowListService;
 
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
 
+	private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
+
 	private final memberService memberService;
 	private final genreService genreService;
 	private final bookService bookService;
+	private final borrowListService borrowListService;
 
 	@Autowired
-	public AdminController(memberService memberService, genreService genreService, bookService bookService) {
+	public AdminController(memberService memberService, genreService genreService, bookService bookService, borrowListService borrowListService) {
 		this.memberService = memberService;
 		this.genreService = genreService;
 		this.bookService = bookService;
+		this.borrowListService = borrowListService;
 	}
 	
 	@GetMapping("/index")
@@ -74,7 +88,7 @@ public class AdminController {
 	@PostMapping("/genres")
 	public String addGenre(@RequestParam("genrename") String genre_name)
 	{
-		System.out.println(genre_name);
+		logger.info("Adding new genre: {}", genre_name);
 		
 		Genre genre =  this.genreService.addGenre(genre_name);
 		if(genre.getName().equals(genre_name)) {
@@ -124,7 +138,7 @@ public class AdminController {
 
 	@RequestMapping(value = "books/add",method=RequestMethod.POST)
 	public String addBook(@RequestParam("name") String name,@RequestParam("genreid") int genreId ,@RequestParam("price") int price,@RequestParam("weight") int weight, @RequestParam("quantity")int quantity,@RequestParam("description") String description,@RequestParam("bookImage") String bookImage) {
-		System.out.println(genreId);
+		logger.info("Adding new book: {} with genre ID: {}", name, genreId);
 		Genre genre = this.genreService.getGenre(genreId);
 		Book book = new Book();
 		book.setId(genreId);
@@ -175,8 +189,27 @@ public class AdminController {
 	public ModelAndView getCustomerDetail() {
 		ModelAndView mView = new ModelAndView("displayCustomers");
 		List<Member> members = this.memberService.getMembers();
-		mView.addObject("customers", members);
+		List<MemberDTO> memberDTOs = DTOConverter.convertToMemberDTOList(members);
+		mView.addObject("customers", memberDTOs);
 		return mView;
+	}
+
+	@GetMapping("borrowlist")
+	public ModelAndView getBorrowList() {
+		ModelAndView mView = new ModelAndView("borrowList");
+		List<BorrowList> borrowLists = this.borrowListService.getBorrowLists();
+		mView.addObject("borrowLists", borrowLists);
+		return mView;
+	}
+
+	@GetMapping("borrowlist/delete")
+	public String deleteBorrowList(@RequestParam("id") int id) {
+		BorrowList borrowList = this.borrowListService.getBorrowList(id);
+		if (borrowList != null) {
+			this.borrowListService.deleteBorrowList(borrowList);
+			logger.info("Deleted borrow list with ID: {}", id);
+		}
+		return "redirect:/admin/borrowlist";
 	}
 	
 	
@@ -206,7 +239,7 @@ public class AdminController {
 				SecurityContextHolder.getContext().setAuthentication(newAuthentication);
 			}
 		} catch (Exception e) {
-			System.out.println("Exception:" + e);
+			logger.error("Error updating user profile for ID {}: {}", userid, e.getMessage(), e);
 		}
 		return "redirect:/admin/profileDisplay";
 	}

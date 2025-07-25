@@ -3,17 +3,26 @@ package com.springproject.SpringProject.controller;
 import com.springproject.SpringProject.models.BorrowList;
 import com.springproject.SpringProject.models.Book;
 import com.springproject.SpringProject.models.Member;
+import com.springproject.SpringProject.dto.MemberDTO;
+import com.springproject.SpringProject.dto.BookDTO;
+import com.springproject.SpringProject.util.DTOConverter;
 import com.springproject.SpringProject.services.borrowListService;
 import com.springproject.SpringProject.services.memberService;
 import com.springproject.SpringProject.services.bookService;
 
 import java.io.Console;
-// ...existing code...
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -24,6 +33,8 @@ import org.springframework.web.servlet.ModelAndView;
 
 @Controller
 public class MemberController{
+
+	private static final Logger logger = LoggerFactory.getLogger(MemberController.class);
 
 	private final memberService memberService;
 	private final bookService bookService;
@@ -94,15 +105,15 @@ public class MemberController{
 		boolean exists = this.memberService.checkMemberExists(member.getUsername());
 
 		if(!exists) {
-			System.out.println(member.getEmail());
+			logger.debug("User email: {}", member.getEmail());
 			member.setRole("ROLE_NORMAL");
 			this.memberService.addMember(member);
 
-			System.out.println("New user created: " + member.getUsername());
+			logger.info("New user created: {}", member.getUsername());
 			ModelAndView mView = new ModelAndView("userLogin");
 			return mView;
 		} else {
-			System.out.println("New user not created - username taken: " + member.getUsername());
+			logger.warn("User registration failed - username already taken: {}", member.getUsername());
 			ModelAndView mView = new ModelAndView("register");
 			mView.addObject("msg", member.getUsername() + " is taken. Please choose a different username.");
 			return mView;
@@ -130,27 +141,17 @@ public class MemberController{
 	
 
 	   //for Learning purpose of model
-		@GetMapping("/test")
-		public String Test(Model model)
-		{
-			System.out.println("test page");
-			model.addAttribute("author","jay gajera");
-			model.addAttribute("id",40);
-			
-			List<String> friends = new ArrayList<String>();
-			model.addAttribute("f",friends);
-			friends.add("xyz");
-			friends.add("abc");
-			
-			return "test";
-		}
-		
-		// for learning purpose of model and view ( how data is pass to view)
+	@GetMapping("test")
+	public String test()
+	{
+		logger.debug("Test page accessed");
+		return "test";
+	}		// for learning purpose of model and view ( how data is pass to view)
 		
 		@GetMapping("/test2")
 		public ModelAndView Test2()
 		{
-			System.out.println("test page");
+			logger.debug("Test2 page accessed");
 			//create modelandview object
 			ModelAndView mv=new ModelAndView();
 			mv.addObject("name","jay gajera 17");
