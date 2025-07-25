@@ -28,11 +28,11 @@ public class memberService {
 	}
 
 	public boolean checkMemberExists(String username) {
-		return memberRepository.findAll().stream().anyMatch(m -> m.getUsername().equals(username));
+		return memberRepository.existsByUsername(username);
 	}
 
 	public Member getMemberByUsername(String username) {
-		return memberRepository.findAll().stream().filter(m -> m.getUsername().equals(username)).findFirst().orElse(null);
+		return memberRepository.findByUsername(username);
 	}
 
 	// Implement checkLogin if needed, or use Spring Security
